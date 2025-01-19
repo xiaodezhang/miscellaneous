@@ -1,0 +1,116 @@
+* {{
+  font-family: "Microsoft YaHei";
+}}
+
+QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
+  color: white;
+  height: 24px;
+}}
+
+QToolButton {{
+  padding: -2px -5px -2px -5px;
+  background-color: transparent;
+}}
+
+QToolButton:focus {{
+  background-color: transparent;
+}}
+
+QPushButton.flat {{
+  background-color: {QTMATERIAL_PRIMARYCOLOR};
+  color: {QTMATERIAL_SECONDARYDARKCOLOR};
+}}
+
+QLCDNumber {{
+  background-color: transparent;
+  border: none;
+}}
+
+.bg-normal {{
+  background-color: {QTMATERIAL_SECONDARYCOLOR};
+}}
+
+.bg-dark {{
+  background-color: {QTMATERIAL_SECONDARYDARKCOLOR};
+}}
+
+.bg-light {{
+  background-color: {QTMATERIAL_SECONDARYLIGHTCOLOR};
+}}
+
+.selected {{
+  border: 1px solid {QTMATERIAL_SECONDARYLIGHTCOLOR};
+}}
+
+.unselected {{
+  border: 1px solid {QTMATERIAL_SECONDARYLIGHTCOLOR};
+}}
+
+.bordered {{
+  border: 1px solid {QTMATERIAL_SECONDARYLIGHTCOLOR};
+}}
+
+.unbordered {{
+  border: none;
+}}
+
+.square {{
+  border-radius: 0;
+}}
+
+.hoverable:hover {{
+  background-color: {QTMATERIAL_SECONDARYLIGHTCOLOR};
+}}
+
+.unhovered {{
+  background-color: transparent;
+}}
+
+.p-6 {{
+  padding: 12px;
+}}
+.p-5 {{
+  padding: 9px;
+}}
+.p-4 {{
+  padding: 7px;
+}}
+.p-3 {{
+  padding: 5px;
+}}
+.p-2 {{
+  padding: 3px;
+}}
+.p-1 {{
+  padding: 1px;
+}}
+
+.m-3 {{
+  padding: 5px;
+}}
+
+.fs-1 {{
+  font-size: 1pt;
+}}
+.fs-2 {{
+  font-size: 3pt;
+}}
+.fs-3 {{
+  font-size: 5pt;
+}}
+.fs-4 {{
+  font-size: 7pt;
+}}
+.fs-5 {{
+  font-size: 9pt;
+}}
+.fs-6 {{
+  font-size: 12pt;
+}}
+
+.fw-light {{
+  color: #B7B7B7;
+}}
+.fw-bold {{
+  font-weight: bold;
+}}
