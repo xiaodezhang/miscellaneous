@@ -63,6 +63,7 @@ class NoteListView(QWidget):
         else:
             os.kill(self._process.pid, signal.SIGTERM)
             self._process = subprocess.Popen(['nvim-qt', item.note.path])
+        self._book.current_note = item.note
 
     def _init_toolbar(self):
         self._toolbar = QToolBar(self)

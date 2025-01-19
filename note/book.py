@@ -31,7 +31,7 @@ def get_file_title(file_path):
 class Note(QObject):
     modified = Signal(str)
     name_changed = Signal(str)
-    def __init__(self, name='Untitled', path=Path(), id=''):
+    def __init__(self, name='Untitled', path=Path(), output=Path(), id=''):
         super().__init__()
 
         if not id:
@@ -47,6 +47,7 @@ class Note(QObject):
         self._name = name
         self._path = path
         self._id = id
+        self._output = output
 
     @property
     def name(self):
@@ -64,10 +65,19 @@ class Note(QObject):
     def path(self, value):
         self._path = value
 
+    @property
+    def output(self):
+        """The output property."""
+        return self._output
+    @output.setter
+    def output(self, value):
+        self._output = value
+
     def serialize(self):
         return {
             'name': self._name,
             'file_path': str(self._path),
+            'output': str(self._output),
             'id': self._id
         }
 
@@ -84,12 +94,12 @@ class Note(QObject):
                 os.makedirs(folder)
 
             # markdown to html
-            output = folder / (self._id + '.html')
-            subprocess.run(['pandoc', '-s', str(self._path), '-o', output])
+            self._output = folder / (self._id + '.html')
+            subprocess.run(['pandoc', '-s', str(self._path), '-o', self._output])
 
             # web view set url with the local html
             # self.web_view.setUrl(output.as_uri())
-            self.modified.emit(output.as_uri())
+            self.modified.emit(self._output.as_uri())
 
             name = get_file_title(self._path)
             if name != self._name:
@@ -101,6 +111,7 @@ class Book(QObject):
     current_note_name_change = Signal(str)
 
     new_note = Signal(Note)
+    current_note_changed = Signal(Note)
 
     def __init__(self):
         super().__init__()
@@ -138,7 +149,9 @@ class Book(QObject):
             self.current_note_name_change.emit(name)
 
     def create_note(self):
-        note = Note()
+        self._add_note(Note())
+
+    def _add_note(self, note: Note):
         self._notes.append(note)
 
         self._current_note = note;
@@ -148,7 +161,6 @@ class Book(QObject):
 
         self.new_note.emit(note)
 
-        return note
 
     def save(self):
         file_name = Path.cwd() / 'book'
@@ -159,12 +171,24 @@ class Book(QObject):
 
     def load(self):
         file_name = Path.cwd() / 'book'
+
         if file_name.exists():
             with open(file_name, 'rb') as file:
                 parsed = msgpack.unpackb(file.read())
-                self._notes = [
-                    Note(x['name'], Path(x['file_path']), x['id'])
-                    for x in parsed['notes']
-                ]
+                for x in parsed['notes']:
+                    self._add_note(Note(x['name'], Path(x['file_path']), 
+                                        Path(x['output']), x['id']))
+
         if self._notes:
             self._current_note = self._notes[0]
+
+    @property
+    def current_note(self):
+        """The current_note property."""
+        return self._current_note
+    @current_note.setter
+    def current_note(self, value):
+        if self._current_note == value:
+            return
+        self._current_note = value
+        self.current_note_changed.emit(value)

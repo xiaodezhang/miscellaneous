@@ -9,6 +9,7 @@ from PySide6.QtGui import QAction, QCloseEvent, QIcon
 from PySide6.QtWebEngineCore import QWebEngineSettings
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QSplitter, QToolBar, QVBoxLayout, QWidget
 from PySide6.QtWebEngineWidgets import QWebEngineView
+from loguru import logger
 from qt_material import apply_stylesheet
 from uuid import uuid4
 
@@ -55,6 +56,11 @@ class MainWidget(QMainWindow):
         self.setCentralWidget(container)
 
         book.current_note_modified.connect(self._on_current_note_modify)
+        book.current_note_changed.connect(
+            lambda note: self._browser.setUrl(note.output.as_uri()))
+
+        if book.current_note:
+            self._browser.setUrl(book.current_note.output.as_uri())
 
         self._read_settings()
 
