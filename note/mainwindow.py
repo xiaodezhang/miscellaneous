@@ -13,6 +13,7 @@ class MainWindow(QMainWindow):
     def __init__(self, book: Book):
         super().__init__()
 
+        self._browser = Browser(self, book)
         self._note_list_view = NoteListView(book)
 
         container = QWidget()
@@ -20,11 +21,8 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout(container)
 
         layout.addWidget(self._spliter)
+
         self._spliter.addWidget(self._note_list_view)
-
-        # Set up the web view
-        self._browser = Browser(self, book)
-
         self._spliter.addWidget(self._browser)
 
         self.setCentralWidget(container)
@@ -32,14 +30,17 @@ class MainWindow(QMainWindow):
         book.current_note_modified.connect(self._on_current_note_modify)
         book.current_note_changed.connect(
             lambda note: self._browser.setUrl(note.output.as_uri()))
+        book.new_note.connect(
+            lambda note: self._browser.setUrl(note.output.as_uri()))
 
         if book.current_note:
             self._browser.setUrl(book.current_note.output.as_uri())
 
-        self._read_settings()
 
-        self._spliter.setSizes([300, 1100])
+        self._spliter.setSizes([300, 1200])
         self.resize(1200, 800)
+
+        self._read_settings()
 
         self.setWindowTitle("Note")
         self.setWindowIcon(QIcon(url('note_stack.svg')))

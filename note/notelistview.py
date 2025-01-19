@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QProgressBar,
     QPushButton,
+    QSizePolicy,
     QToolBar,
     QToolButton,
     QVBoxLayout,

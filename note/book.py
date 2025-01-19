@@ -35,24 +35,33 @@ class Note(QObject):
     def __init__(self, name='Untitled', path=Path(), output=Path(), id=''):
         super().__init__()
 
-        if not id:
-            id = str(uuid4())
-
-            # create the folder
-            if not os.path.exists(self.note_folder):
-                os.makedirs(self.note_folder)
-
-            path =  self.note_folder / (id + '.md')
-
-            # create new file
-            path.touch(exist_ok=True)
-
-        self._file_hash = get_file_hash(path)
-
         self._name = name
         self._path = path
         self._id = id
         self._output = output
+
+        if not id:
+            self._id = str(uuid4())
+
+            # create the note folder
+            if not os.path.exists(self.note_folder):
+                os.makedirs(self.note_folder)
+
+            self._path =  self.note_folder / (self._id + '.md')
+
+            # create new note file
+            self._path.touch(exist_ok=True)
+
+            # create the output folder
+            if not os.path.exists(self.html_folder):
+                os.makedirs(self.html_folder)
+
+            self._output = self.html_folder / (self._id + '.html')
+
+            # create output file
+            self._output.touch(exist_ok=True)
+
+        self._file_hash = get_file_hash(self._path)
 
     @property
     def name(self):
@@ -96,10 +105,6 @@ class Note(QObject):
         hash = get_file_hash(self._path)
         if hash != self._file_hash:
             self._file_hash = hash
-
-            # create the output folder
-            if not os.path.exists(self.html_folder):
-                os.makedirs(self.html_folder)
 
             # markdown to html
             self._output = self.html_folder / (self._id + '.html')
