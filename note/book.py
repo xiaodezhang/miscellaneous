@@ -7,6 +7,7 @@ import msgpack
 from pathlib import Path
 from uuid import uuid4
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
+from qt_material.resources.generate import shutil
 
 def get_file_hash(file_path):
     hash_sha256 = hashlib.sha256()
@@ -37,7 +38,11 @@ class Note(QObject):
         if not id:
             id = str(uuid4())
 
-            path = Path.cwd() / '.notes' / (id + '.md')
+            # create the folder
+            if not os.path.exists(self.note_folder):
+                os.makedirs(self.note_folder)
+
+            path =  self.note_folder / (id + '.md')
 
             # create new file
             path.touch(exist_ok=True)
@@ -81,21 +86,26 @@ class Note(QObject):
             'id': self._id
         }
 
+    def add_resource(self, file_path: str):
+        file_name = Path(file_path).name
+
+        shutil.copy(file_path, self.note_folder / file_name)
+        shutil.copy(file_path, self.html_folder / file_name)
+
     def check_file_status(self):
         hash = get_file_hash(self._path)
         if hash != self._file_hash:
             self._file_hash = hash
 
-            name = self._path.stem
-
             # create the output folder
-            folder = Path.cwd() / '.htmls' / name
-            if not os.path.exists(folder):
-                os.makedirs(folder)
+            if not os.path.exists(self.html_folder):
+                os.makedirs(self.html_folder)
 
             # markdown to html
-            self._output = folder / (self._id + '.html')
+            self._output = self.html_folder / (self._id + '.html')
             subprocess.run(['pandoc', '-s', str(self._path), '-o', self._output])
+
+            self._check_and_copy_resources()
 
             # web view set url with the local html
             # self.web_view.setUrl(output.as_uri())
@@ -105,6 +115,21 @@ class Note(QObject):
             if name != self._name:
                 self._name = name
                 self.name_changed.emit(name)
+
+    def _check_and_copy_resources(self):
+        note_resources = [x.name for x in self.note_folder.iterdir()]
+        html_resources = [x.name for x in self.html_folder.iterdir()]
+        to_move_resources = [x for x in note_resources if x not in html_resources]
+        for x in to_move_resources:
+            shutil.copy(self.note_folder / x, self.html_folder / x)
+
+    @property
+    def html_folder(self):
+        return Path.cwd() / '.htmls' / self._id
+
+    @property
+    def note_folder(self):
+        return Path.cwd() / '.notes' / self._id
 
 class Book(QObject):
     current_note_modified = Signal(str)
@@ -144,7 +169,7 @@ class Book(QObject):
             self.current_note_modified.emit(path)
 
     @Slot()
-    def _on_note_name_change(self, name: str):
+    def _on_note_name_change(self, name: str) -> None:
         if self.sender() is self._current_note:
             self.current_note_name_change.emit(name)
 
@@ -161,6 +186,9 @@ class Book(QObject):
 
         self.new_note.emit(note)
 
+    def add_resource(self, file_path: str):
+        if self._current_note:
+            self._current_note.add_resource(file_path)
 
     def save(self):
         file_name = Path.cwd() / 'book'
