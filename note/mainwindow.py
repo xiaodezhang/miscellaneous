@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
             self._browser.setUrl(book.current_note.output.as_uri())
 
 
-        self._spliter.setSizes([300, 1200])
+        self._spliter.setSizes([330, 1200])
         self.resize(1200, 800)
 
         self._read_settings()

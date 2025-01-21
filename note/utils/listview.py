@@ -12,7 +12,7 @@ from utils import override, replace_class
 from utils.hoverablewidget import HoverableWidget
 
 class Item(HoverableWidget):
-    actived = Signal(int)
+    active_changed = Signal(bool)
     def __init__(self):
         super().__init__()
         self._id = 0
@@ -26,26 +26,23 @@ class Item(HoverableWidget):
         self._id = value
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        self.set_active()
+        self.active = True
         return super().mousePressEvent(event)
 
-    def is_active(self):
+    @property
+    def active(self):
+        """The active property."""
         return self._active
-
-    def set_active(self):
-        self.actived.emit(self._id)
-
-    def _set_active(self):
-        replace_class(self, 'bg-dark', 'bg-light')
-        self.style().unpolish(self)
-        self.style().polish(self)
-        self._active = True 
-
-    def set_inactive(self):
-        replace_class(self, 'bg-light', 'bg-dark')
-        self.style().unpolish(self)
-        self.style().polish(self)
-        self._active = False 
+    @active.setter
+    def active(self, flag):
+        if self._active == flag:
+            return
+        if flag:
+            replace_class(self, 'bg-dark', 'bg-light')
+        else:
+            replace_class(self, 'bg-light', 'bg-dark')
+        self._active = flag
+        self.active_changed.emit(flag)
 
 class TextItem(Item):
     def __init__(self, text: str):
@@ -94,10 +91,10 @@ class Scene(QWidget):
         if self.current_item == value:
             return
         if self.current_item:
-            self.current_item.set_inactive()
+            self.current_item.active = False
         self._current_item = value
         if value:
-            value._set_active()
+            value.active = True
         self.item_changed.emit(value)
 
     def set_orientation(self, orientation: Qt.Orientation):
@@ -153,15 +150,18 @@ class Scene(QWidget):
             self._layout.insertWidget(new_item._id, new_item)
             self._items.append(new_item)
 
-        new_item.actived.connect(lambda x: self.set_active(x))
+        new_item.active_changed.connect(self._on_item_active_change)
 
         return new_item
 
+    def _on_item_active_change(self, flag):
+        if flag:
+            item = self.sender()
+            assert isinstance(item, Item)
+            self.current_item = item
+
     def set_active(self, id: int):
         self.current_item = self[id]
-
-    def set_inactive(self):
-        self.current_item = None
 
 class ListView(QScrollArea):
     item_changed = Signal(Item)
@@ -218,9 +218,6 @@ class ListView(QScrollArea):
 
     def set_active(self, id: int):
         self._scene.set_active(id)
-
-    def set_inactive(self):
-        self._scene.set_inactive()
 
     def add_item(self, item: Item):
         return self._scene.add_item(item)

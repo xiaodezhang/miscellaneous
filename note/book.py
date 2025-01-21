@@ -1,13 +1,13 @@
-from loguru import logger
+import shutil
 import subprocess
 import os
 import re
 import hashlib
+from loguru import logger
 import msgpack
 from pathlib import Path
 from uuid import uuid4
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
-from qt_material.resources.generate import shutil
 
 def get_file_hash(file_path):
     hash_sha256 = hashlib.sha256()
@@ -136,12 +136,18 @@ class Note(QObject):
     def note_folder(self):
         return Path.cwd() / '.notes' / self._id
 
+    def clear(self):
+        shutil.rmtree(self.html_folder)
+        shutil.rmtree(self.note_folder)
+
 class Book(QObject):
     current_note_modified = Signal(str)
     current_note_name_change = Signal(str)
 
     new_note = Signal(Note)
     current_note_changed = Signal(Note)
+
+    note_removed = Signal(Note)
 
     def __init__(self):
         super().__init__()
@@ -180,6 +186,20 @@ class Book(QObject):
 
     def create_note(self):
         self._add_note(Note())
+
+    def remove_note(self, note: Note):
+        logger.debug("remove_note")
+        note.modified.disconnect(self._on_note_modify)
+        note.name_changed.disconnect(self._on_note_name_change)
+
+        self._notes.remove(note)
+
+        note.clear()
+
+        self.note_removed.emit(note)
+
+        if note is self._current_note:
+            self.current_note = self._notes[-1] if self._notes else None
 
     def _add_note(self, note: Note):
         self._notes.append(note)
