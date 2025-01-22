@@ -188,7 +188,6 @@ class Book(QObject):
         self._add_note(Note())
 
     def remove_note(self, note: Note):
-        logger.debug("remove_note")
         note.modified.disconnect(self._on_note_modify)
         note.name_changed.disconnect(self._on_note_name_change)
 
@@ -220,7 +219,7 @@ class Book(QObject):
         with open(file_name, 'wb') as file:
             file.write(msgpack.packb({
                 'notes': [x.serialize() for x in self._notes]
-            })) #type: ignore
+            }))
 
     def load(self):
         file_name = Path.cwd() / 'book'

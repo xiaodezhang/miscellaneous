@@ -1,20 +1,12 @@
 import subprocess
 import signal
 import os
-from typing import Literal
-from PySide6.QtGui import QAction, QActionGroup, QContextMenuEvent, QCursor, QIcon, QMouseEvent, QPixmap
-from PySide6.QtCore import QSize, QTimer, Qt, Signal, Slot
+from PySide6.QtGui import QAction, QContextMenuEvent, QCursor, QIcon, QPixmap
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
-    QFrame,
     QHBoxLayout,
-    QLCDNumber,
     QLabel, 
-    QLineEdit,
-    QMainWindow,
     QMenu,
-    QProgressBar,
-    QPushButton,
-    QSizePolicy,
     QToolBar,
     QToolButton,
     QVBoxLayout,
@@ -30,8 +22,6 @@ class NoteListView(QWidget):
     def __init__(self, book: Book):
         super().__init__()
         self._book = book
-
-        self._process = None
 
         self._note_list = ListView()
 
@@ -65,12 +55,12 @@ class NoteListView(QWidget):
     def _on_item_change(self, item):
         assert isinstance(item, NoteItem)
 
-        if self._process is None:
-            self._process = subprocess.Popen(['nvim-qt', item.note.path])
-
-        else:
-            os.kill(self._process.pid, signal.SIGTERM)
-            self._process = subprocess.Popen(['nvim-qt', item.note.path])
+        # if self._process is None:
+        #     self._process = subprocess.Popen(['nvim-qt', item.note.path])
+        #
+        # else:
+        #     os.kill(self._process.pid, signal.SIGTERM)
+        #     self._process = subprocess.Popen(['nvim-qt', item.note.path])
 
         self._book.current_note = item.note
 
@@ -125,9 +115,9 @@ class NoteListView(QWidget):
     def _on_create_note(self):
         self._book.create_note()
 
-    def release(self):
-        if self._process is not None:
-            os.kill(self._process.pid, signal.SIGTERM)
+    # def release(self):
+    #     if self._process is not None:
+    #         os.kill(self._process.pid, signal.SIGTERM)
 
 class NoteItem(Item):
     removed = Signal(Item)

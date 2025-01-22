@@ -1,3 +1,4 @@
+import socket
 import sys
 from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication
@@ -6,13 +7,17 @@ from qt_material import apply_stylesheet
 
 from book import Book
 from mainwindow import MainWindow
+from nvim import Nvim
 
 if __name__ == "__main__":
+
     app = QApplication(sys.argv)
 
     book = Book()
 
-    main_widget = MainWindow(book)
+    nvim = Nvim()
+
+    main_widget = MainWindow(book, nvim)
 
     apply_stylesheet(
         app
@@ -26,3 +31,4 @@ if __name__ == "__main__":
     main_widget.show()
     app.exec()
     book.save()
+    nvim.close()
