@@ -1,5 +1,5 @@
 from PySide6.QtCore import QSettings, Slot
-from PySide6.QtGui import QCloseEvent, QIcon
+from PySide6.QtGui import QAction, QCloseEvent, QIcon
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QSplitter, QWidget
 from loguru import logger
 
@@ -9,12 +9,14 @@ from notelistview import NoteListView
 from resourcelistview import ResourceListView
 from utils.resource import url
 from nvim import Nvim
+from proxy import Proxy
 
 class MainWindow(QMainWindow):
-    def __init__(self, book: Book, nvim: Nvim):
+    def __init__(self, book: Book, nvim: Nvim, proxy: Proxy):
         super().__init__()
 
         self._nvim = nvim
+        self._proxy = proxy
 
         self._browser = Browser(self, book)
         self._note_list_view = NoteListView(book)
@@ -31,6 +33,7 @@ class MainWindow(QMainWindow):
         self._spliter.addWidget(self._resource_list_view)
 
         self.setCentralWidget(container)
+        self._build_toolbar()
 
         book.current_note_modified.connect(self._on_current_note_modify)
         book.current_note_changed.connect(lambda note: self._switch_note(note))
@@ -46,6 +49,43 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Note")
         self.setWindowIcon(QIcon(url('note_stack.svg')))
+
+    def _build_toolbar(self):
+        toolbar = self.addToolBar('')
+
+        self._gpt_proxy_action = QAction(QIcon(url('ChatGPT-Logo.svg'))
+                                         , 'toggle chatgpt', self)
+
+        self._fast_proxy_action = QAction(QIcon(url('cloud.svg'))
+                                         , 'toggle fast proxy', self)
+
+        self._gpt_proxy_action.setCheckable(True)
+        self._fast_proxy_action.setCheckable(True)
+        self._gpt_proxy_action.setChecked(True)
+
+        self._gpt_proxy_action.toggled.connect(self._on_gpt_proxy_toggle)
+        self._fast_proxy_action.toggled.connect(self._on_fast_proxy_toggle)
+
+        toolbar.addAction(self._gpt_proxy_action)
+        toolbar.addAction(self._fast_proxy_action)
+
+    @Slot()
+    def _on_gpt_proxy_toggle(self, checked):
+        if self._proxy.usa_opened == checked:
+            return
+        self._proxy.toggle_usa()
+        self._update_proxy_status()
+
+    @Slot()
+    def _on_fast_proxy_toggle(self, checked):
+        if self._proxy.hongkong_opened == checked:
+            return
+        self._proxy.toggle_hongkong()
+        self._update_proxy_status()
+
+    def _update_proxy_status(self):
+        self._gpt_proxy_action.setChecked(self._proxy.usa_opened)
+        self._fast_proxy_action.setChecked(self._proxy.hongkong_opened)
 
     @Slot()
     def _on_current_note_modify(self, url: str):

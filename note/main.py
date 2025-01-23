@@ -1,13 +1,11 @@
-import socket
 import sys
-from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication
-from loguru import logger
 from qt_material import apply_stylesheet
 
 from book import Book
 from mainwindow import MainWindow
 from nvim import Nvim
+from proxy import Proxy
 
 if __name__ == "__main__":
 
@@ -17,7 +15,9 @@ if __name__ == "__main__":
 
     nvim = Nvim()
 
-    main_widget = MainWindow(book, nvim)
+    proxy = Proxy()
+
+    main_widget = MainWindow(book, nvim, proxy)
 
     apply_stylesheet(
         app
@@ -32,3 +32,4 @@ if __name__ == "__main__":
     app.exec()
     book.save()
     nvim.close()
+    proxy.close()
