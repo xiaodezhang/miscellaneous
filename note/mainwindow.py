@@ -39,6 +39,18 @@ class MainWindow(QMainWindow):
         book.current_note_changed.connect(lambda note: self._switch_note(note))
         book.new_note.connect(lambda note: self._switch_note(note))
 
+        self._note_list_view.side_bar_triggered.connect(
+            lambda: self._browser.show_side_note_action())
+
+        self._resource_list_view.side_bar_triggered.connect(
+            lambda: self._browser.show_side_resource_action())
+
+        self._browser.side_note_triggered.connect(
+            lambda: self._note_list_view.show()
+        )
+        self._browser.side_resource_triggered.connect(
+            lambda: self._resource_list_view.show())
+
         if book.current_note:
             self._switch_note(book.current_note)
 
@@ -53,10 +65,10 @@ class MainWindow(QMainWindow):
     def _build_toolbar(self):
         toolbar = self.addToolBar('')
 
-        self._gpt_proxy_action = QAction(QIcon(url('ChatGPT-Logo.svg'))
+        self._gpt_proxy_action = QAction(QIcon(url('chat.svg'))
                                          , 'toggle chatgpt', self)
 
-        self._fast_proxy_action = QAction(QIcon(url('cloud.svg'))
+        self._fast_proxy_action = QAction(QIcon(url('cloud_upload.svg'))
                                          , 'toggle fast proxy', self)
 
         self._gpt_proxy_action.setCheckable(True)
@@ -68,6 +80,8 @@ class MainWindow(QMainWindow):
 
         toolbar.addAction(self._gpt_proxy_action)
         toolbar.addAction(self._fast_proxy_action)
+
+        toolbar.setMovable(False)
 
     @Slot()
     def _on_gpt_proxy_toggle(self, checked):

@@ -1,16 +1,11 @@
-import subprocess
-import signal
-import os
 from PySide6.QtGui import QAction, QContextMenuEvent, QCursor, QIcon, QPixmap
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
     QHBoxLayout,
-    QLabel, 
+    QLabel,
+    QMainWindow, 
     QMenu,
-    QToolBar,
     QToolButton,
-    QVBoxLayout,
-    QWidget,
 )
 from loguru import logger
 from book import Book, Note
@@ -18,17 +13,17 @@ from utils import append_class, override, place_holder
 from utils.listview import Item, ListView
 from utils.resource import url 
 
-class NoteListView(QWidget):
+class NoteListView(QMainWindow):
+    side_bar_triggered = Signal()
+
     def __init__(self, book: Book):
         super().__init__()
         self._book = book
 
         self._note_list = ListView()
 
-        self._layout = QVBoxLayout(self)
-
         self._init_toolbar()
-        self._layout.addWidget(self._note_list)
+        self.setCentralWidget(self._note_list)
 
         book.new_note.connect(self._on_new_note)
         book.current_note_changed.connect(self._on_current_note_change)
@@ -55,36 +50,35 @@ class NoteListView(QWidget):
     def _on_item_change(self, item):
         assert isinstance(item, NoteItem)
 
-        # if self._process is None:
-        #     self._process = subprocess.Popen(['nvim-qt', item.note.path])
-        #
-        # else:
-        #     os.kill(self._process.pid, signal.SIGTERM)
-        #     self._process = subprocess.Popen(['nvim-qt', item.note.path])
-
         self._book.current_note = item.note
 
     def _init_toolbar(self):
-        self._toolbar = QToolBar(self)
+        self._toolbar = self.addToolBar('')
 
         self._search_action = QAction(QIcon(url("search.svg")), "search", self)
 
-        self._side_bar_action = QAction(QIcon(url("view_sidebar.svg")),
+        self._side_bar_action = QAction(QIcon(url("right_panel_open.svg")),
                                         "view side bar", self)
 
         self._new_note_action = QAction(QIcon(url('edit_square.svg')),
                                         'add new note', self)
 
+        self._place_holder = place_holder()
+
         self._toolbar.setMovable(False)
 
         self._toolbar.addAction(self._side_bar_action)
-        self._toolbar.addWidget(place_holder())
+        self._toolbar.addWidget(self._place_holder)
         self._toolbar.addAction(self._search_action)
         self._toolbar.addAction(self._new_note_action)
 
         self._new_note_action.triggered.connect(lambda: self._on_create_note())
+        self._side_bar_action.triggered.connect(self._on_side_bar_trigger)
 
-        self._layout.addWidget(self._toolbar)
+    @Slot()
+    def _on_side_bar_trigger(self):
+        self.hide()
+        self.side_bar_triggered.emit()
 
     @Slot()
     def _on_new_note(self, note: Note):
@@ -114,10 +108,6 @@ class NoteListView(QWidget):
     @Slot()
     def _on_create_note(self):
         self._book.create_note()
-
-    # def release(self):
-    #     if self._process is not None:
-    #         os.kill(self._process.pid, signal.SIGTERM)
 
 class NoteItem(Item):
     removed = Signal(Item)

@@ -20,6 +20,8 @@ from utils.listview import Item, ListView
 from utils.resource import url 
 
 class ResourceListView(QWidget):
+    side_bar_triggered = Signal()
+
     def __init__(self):
         super().__init__()
 
@@ -57,15 +59,21 @@ class ResourceListView(QWidget):
     def _init_toolbar(self):
         self._toolbar = QToolBar(self)
 
-        self._side_bar_action = QAction(QIcon(url("view_sidebar.svg")),
-                                        "view side bar", self)
+        self._side_bar_action = QAction(QIcon(url("left_panel_open.svg")),
+                                        "hide", self)
 
         self._toolbar.setMovable(False)
 
         self._toolbar.addAction(self._side_bar_action)
-        # self._toolbar.addWidget(place_holder())
 
         self._layout.addWidget(self._toolbar)
+
+        self._side_bar_action.triggered.connect(self._on_side_bar_trigger)
+
+    @Slot()
+    def _on_side_bar_trigger(self):
+        self.hide()
+        self.side_bar_triggered.emit()
 
     @Slot()
     def _on_check_resources(self):
