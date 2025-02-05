@@ -90,8 +90,9 @@ class Note(QObject):
         if hash != self._file_hash:
             self._file_hash = hash
 
+            pandoc = Path.cwd() / 'external' / 'pandoc.exe'
             # markdown to html
-            subprocess.run(['pandoc', '-s', str(self.path), '-o', self.output])
+            subprocess.run([pandoc, '-s', str(self.path), '-o', self.output])
 
             self._check_and_copy_resources()
 
