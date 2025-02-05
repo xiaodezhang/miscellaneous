@@ -59,11 +59,16 @@ class ResourceListView(QWidget):
     def _init_toolbar(self):
         self._toolbar = QToolBar(self)
 
-        self._side_bar_action = QAction(QIcon(url("left_panel_open.svg")),
+        self._side_bar_action = QAction(QIcon(url("left_panel_open.svg")), 
                                         "hide", self)
+
+        self._folder_action = QAction(QIcon(url("folder_open.svg")),
+                                      'open the folder', self)
 
         self._toolbar.setMovable(False)
 
+        self._toolbar.addAction(self._folder_action)
+        self._toolbar.addWidget(place_holder())
         self._toolbar.addAction(self._side_bar_action)
 
         self._layout.addWidget(self._toolbar)
