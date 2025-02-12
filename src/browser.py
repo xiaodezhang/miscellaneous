@@ -9,6 +9,24 @@ from book import Book
 from utils import append_class, place_holder
 from utils.resource import url 
 
+class DragWebEngineView(QWebEngineView):
+    def __init__(self, parent, book):
+        super().__init__(parent)
+        self._book = book
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, e: QDragEnterEvent) -> None:
+        if e.mimeData().hasUrls():  # 判断是否是文件
+            e.acceptProposedAction()  # 接受拖放事件
+        return super().dragEnterEvent(e)
+
+    def dropEvent(self, e: QDropEvent) -> None:
+        urls = e.mimeData().urls()  # 获取拖放的文件路径
+        if urls:
+            file_path = urls[0].toLocalFile()  # 获取第一个文件的路径
+            self._book.add_resource(file_path)
+        return super().dropEvent(e)
+
 class Browser(QMainWindow):
     side_note_triggered = Signal()
     side_resource_triggered = Signal()
@@ -17,9 +35,7 @@ class Browser(QMainWindow):
         super().__init__(parent)
         self._book = book
 
-        self._web_engine_view = QWebEngineView(self)
-
-        self.setAcceptDrops(True)
+        self._web_engine_view = DragWebEngineView(self, book)
 
         self._tool_bar = self.addToolBar('')
 
@@ -71,17 +87,3 @@ class Browser(QMainWindow):
 
     def show_side_resource_action(self):
         self._side_resource_action.setVisible(True)
-
-    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        if event.mimeData().hasUrls():  # 判断是否是文件
-            event.acceptProposedAction()  # 接受拖放事件
-        return super().dragEnterEvent(event)
-
-    def dropEvent(self, event: QDropEvent) -> None:
-        urls = event.mimeData().urls()  # 获取拖放的文件路径
-        if urls:
-            file_path = urls[0].toLocalFile()  # 获取第一个文件的路径
-            logger.debug(f"file_path: {file_path}")
-            self._book.add_resource(file_path)
-
-        return super().dropEvent(event)

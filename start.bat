@@ -1,2 +1,2 @@
 call ..\env\Scripts\activate
-py -d .\note\main.py
+py -d .\src\main.py

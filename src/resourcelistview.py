@@ -1,7 +1,4 @@
 from pathlib import Path
-import subprocess
-import signal
-import os
 from PySide6.QtGui import QAction, QContextMenuEvent, QCursor, QIcon, QPixmap
 from PySide6.QtCore import QTimer, Signal, Slot
 from PySide6.QtWidgets import (
@@ -13,8 +10,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from loguru import logger
-from book import Book, Note
 from utils import append_class, override, place_holder
 from utils.listview import Item, ListView
 from utils.resource import url 
