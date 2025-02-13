@@ -1,5 +1,5 @@
 from PySide6.QtCore import QSettings, Slot
-from PySide6.QtGui import QAction, QCloseEvent, QIcon
+from PySide6.QtGui import QAction, QActionGroup, QCloseEvent, QIcon
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QSplitter, QWidget
 from loguru import logger
 
@@ -71,37 +71,52 @@ class MainWindow(QMainWindow):
         self._fast_proxy_action = QAction(QIcon(url('cloud_upload.svg'))
                                          , 'toggle fast proxy', self)
 
+        self._proxy_off_action = QAction(QIcon(url('wifi_off.svg')), 
+                                         'close the proxy', self)
+
+        action_group = QActionGroup(self)
+
+        action_group.addAction(self._gpt_proxy_action)
+        action_group.addAction(self._fast_proxy_action)
+
         self._gpt_proxy_action.setCheckable(True)
         self._fast_proxy_action.setCheckable(True)
+        self._proxy_off_action.setCheckable(True)
+
         self._gpt_proxy_action.setChecked(True)
 
         self._gpt_proxy_action.toggled.connect(self._on_gpt_proxy_toggle)
         self._fast_proxy_action.toggled.connect(self._on_fast_proxy_toggle)
+        self._proxy_off_action.toggled.connect(self._on_proxy_off_toggle)
 
         toolbar.addAction(self._gpt_proxy_action)
         toolbar.addAction(self._fast_proxy_action)
+        toolbar.addAction(self._proxy_off_action)
 
         toolbar.setMovable(False)
 
-    @Slot()
+    @Slot() #type: ignore
+    def _on_proxy_off_toggle(self, checked):
+        if checked:
+            self._proxy.toggle_usa(False)
+            self._proxy.toggle_hongkong(False)
+        else:
+            if self._gpt_proxy_action.isChecked():
+                self._proxy.toggle_usa(True)
+            else:
+                self._proxy.toggle_hongkong(True)
+
+    @Slot() #type: ignore
     def _on_gpt_proxy_toggle(self, checked):
-        if self._proxy.usa_opened == checked:
-            return
-        self._proxy.toggle_usa()
-        self._update_proxy_status()
+        logger.debug("gpt proxy toggle")
+        self._proxy.toggle_usa(checked)
 
-    @Slot()
+    @Slot() #type: ignore
     def _on_fast_proxy_toggle(self, checked):
-        if self._proxy.hongkong_opened == checked:
-            return
-        self._proxy.toggle_hongkong()
-        self._update_proxy_status()
+        logger.debug("fast proxy toggle")
+        self._proxy.toggle_hongkong(checked)
 
-    def _update_proxy_status(self):
-        self._gpt_proxy_action.setChecked(self._proxy.usa_opened)
-        self._fast_proxy_action.setChecked(self._proxy.hongkong_opened)
-
-    @Slot()
+    @Slot() #type: ignore
     def _on_current_note_modify(self, url: str):
         self._browser.setUrl(url)
 

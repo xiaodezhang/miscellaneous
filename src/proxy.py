@@ -5,7 +5,9 @@ from PySide6.QtCore import QObject
 import winreg
 
 HONGKONG_IP= '154.197.26.66'
+HONGKONG_LOCAL_PORT = 8219
 USA_IP = '156.247.14.88'
+USA_LOCAL_PORT = 8229
 
 def get_proxy_settings():
     try:
@@ -54,94 +56,45 @@ def toggle_proxy(flag: bool):
     finally:
         winreg.CloseKey(registry_key) #type: ignore
 
-class ProxyStatus(QObject):
-    def __init__(self, enabled: list[bool], connected: bool, ip: str):
-        super().__init__()
-        self._enabled = enabled 
-        self._ip = ip
-        self._process = self._connect_proxy() if connected else None
-
-    @property
-    def opened(self):
-        return self._enabled[0] and self._process is not None
-
-    @property
-    def connected(self):
-        return self._process is not None
-
-    def open(self):
-        if not self._enabled[0]:
-            toggle_proxy(True)
-
-        if self._process is None:
-            self._process = self._connect_proxy()
-
-        self._enabled[0] = True
-
-    def disconnect_proxy(self):
-        if self._process is not None:
-            if self._process.poll() is None:  # 检查进程是否还在运行
-                self._process.terminate()  # 优雅终止
-                try:
-                    self._process.wait(timeout=5)  # 等待子进程退出
-                except subprocess.TimeoutExpired:
-                    self._process.kill()  # 强制终止
-                    logger.info(f"Process {self._process.pid} forcefully killed.")
-            else:
-                logger.info(f"Process {self._process.pid} already terminated.")
-
-            self._process = None
-
-    def _connect_proxy(self):
-        gost = Path.cwd() / 'external' / 'gost-windows-amd64.exe'
-        return subprocess.Popen(
-            [str(gost), '-L=:8219', f'-F=http+tls://{self._ip}:443']
-           , creationflags=subprocess.CREATE_NO_WINDOW)
-
 class Proxy(QObject):
     def __init__(self):
         super().__init__()
 
-        set_proxy_settings('127.0.0.1', 8219)
+        self._hongkong_process = self._connect_proxy(HONGKONG_IP, HONGKONG_LOCAL_PORT)
+        self._usa_process = self._connect_proxy(USA_IP, USA_LOCAL_PORT)
+
+        set_proxy_settings('127.0.0.1', USA_LOCAL_PORT)
         toggle_proxy(True)
-        self._enabled = [True]
 
-        self._hongkong_proxy = ProxyStatus(self._enabled, False, HONGKONG_IP)
-        self._usa_proxy = ProxyStatus(self._enabled, True, USA_IP)
+    def _connect_proxy(self, ip, local_port):
+        gost = Path.cwd() / 'external' / 'gost-windows-amd64.exe'
+        return subprocess.Popen(
+            [str(gost), f'-L=:{local_port}', f'-F=http+tls://{ip}:443']
+           , creationflags=subprocess.CREATE_NO_WINDOW)
 
-    def toggle_hongkong(self):
-        if self._hongkong_proxy.opened:
-            self._toggle_proxy(False)
-
-        else:
-            if self._usa_proxy.connected:
-                self._usa_proxy.disconnect_proxy()
-
-            self._hongkong_proxy.open()
-
-    def toggle_usa(self):
-        if self._usa_proxy.opened:
-            self._toggle_proxy(False)
-
-        else:
-            if self._hongkong_proxy.connected:
-                self._hongkong_proxy.disconnect_proxy()
-
-            self._usa_proxy.open()
-
-    def _toggle_proxy(self, flag):
+    def toggle_hongkong(self, flag):
+        if flag:
+            set_proxy_settings('127.0.0.1', HONGKONG_LOCAL_PORT)
         toggle_proxy(flag)
-        self._enabled[0] = flag
+
+    def toggle_usa(self, flag):
+        if flag:
+            set_proxy_settings('127.0.0.1', USA_LOCAL_PORT)
+        toggle_proxy(flag)
 
     def close(self):
-        self._hongkong_proxy.disconnect_proxy()
-        self._usa_proxy.disconnect_proxy()
+        self.disconnect_proxy(self._hongkong_process)
+        self.disconnect_proxy(self._usa_process)
+        toggle_proxy(False)
 
-    @property
-    def hongkong_opened(self):
-        return self._hongkong_proxy.opened
-
-    @property
-    def usa_opened(self):
-        return self._usa_proxy.opened
-
+    def disconnect_proxy(self, process):
+        if process is not None:
+            if process.poll() is None:  # 检查进程是否还在运行
+                process.terminate()  # 优雅终止
+                try:
+                    process.wait(timeout=5)  # 等待子进程退出
+                except subprocess.TimeoutExpired:
+                    process.kill()  # 强制终止
+                    logger.info(f"Process {process.pid} forcefully killed.")
+            else:
+                logger.info(f"Process {process.pid} already terminated.")
