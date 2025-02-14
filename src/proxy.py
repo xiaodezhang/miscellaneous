@@ -88,13 +88,12 @@ class Proxy(QObject):
         toggle_proxy(False)
 
     def disconnect_proxy(self, process):
-        if process is not None:
-            if process.poll() is None:  # 检查进程是否还在运行
-                process.terminate()  # 优雅终止
-                try:
-                    process.wait(timeout=5)  # 等待子进程退出
-                except subprocess.TimeoutExpired:
-                    process.kill()  # 强制终止
-                    logger.info(f"Process {process.pid} forcefully killed.")
-            else:
-                logger.info(f"Process {process.pid} already terminated.")
+        if process.poll() is None:  # 检查进程是否还在运行
+            process.terminate()  # 优雅终止
+            try:
+                process.wait(timeout=5)  # 等待子进程退出
+            except subprocess.TimeoutExpired:
+                process.kill()  # 强制终止
+                logger.info(f"Process {process.pid} forcefully killed.")
+        else:
+            logger.info(f"Process {process.pid} already terminated.")

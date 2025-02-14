@@ -140,7 +140,7 @@ class ResourceItem(Item):
     def path(self):
         return self._path
 
-    @Slot()
+    @Slot() #type: ignore
     def _on_hover(self, flag):
         self._more_button.setVisible(flag)
         if self.active:

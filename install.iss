@@ -1,4 +1,4 @@
-#define ApplicationName 'Cushion'
+#define ApplicationName 'Miscellaneous'
 #define ExeName ApplicationName + '.exe'
 #define ExeFile './dist/main.dist/' + ExeName
 #define ApplicationVersion GetVersionNumbersString(ExeFile)
@@ -21,7 +21,7 @@ Name: zh; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Files]
 Source: "*"; DestDir: "{app}"; Flags: recursesubdirs
-Source: "pandas.libs/*"; DestDir: "{app}"; Flags: recursesubdirs
+;Source: "pandas.libs/*"; DestDir: "{app}"; Flags: recursesubdirs
 
 [Run]
 Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,My Application}"; Flags: nowait postinstall skipifsilent
@@ -29,5 +29,5 @@ Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,My Application}"; 
 [Icons]
 Name: "{group}\{#GroupName}"; Filename: "{app}\{#ExeName}"
 Name: "{commondesktop}\{#ApplicationName}"; Filename: "{app}\{#ExeName}"
-;Name: "{commonstartup}\{#ApplicationName}"; Filename: "{app}\{#ExeName}"
+Name: "{commonstartup}\{#ApplicationName}"; Filename: "{app}\{#ExeName}"
 Name: "{commonprograms}\{#ApplicationName}"; Filename: "{app}\{#ExeName}"

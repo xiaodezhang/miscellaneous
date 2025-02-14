@@ -1,3 +1,4 @@
+from pathlib import Path
 from PySide6.QtCore import QSettings, Slot
 from PySide6.QtGui import QAction, QActionGroup, QCloseEvent, QIcon
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QSplitter, QWidget
@@ -60,8 +61,8 @@ class MainWindow(QMainWindow):
 
         self._read_settings()
 
-        self.setWindowTitle("Note")
-        self.setWindowIcon(QIcon(url('note_stack.svg')))
+        self.setWindowTitle("Miscellaneous")
+        self.setWindowIcon(QIcon(str(Path.cwd() / 'image' / 'stack.png')))
 
     def _build_toolbar(self):
         self._build_main_toolbar()
@@ -81,6 +82,8 @@ class MainWindow(QMainWindow):
     def _build_main_toolbar(self):
         toolbar = self.addToolBar('main')
         action_group = QActionGroup(self)
+
+        toolbar.setObjectName('main')
 
         self._note_action = self._create_action(
             'note_stack.svg', 'Note', toolbar, action_group)
@@ -104,6 +107,8 @@ class MainWindow(QMainWindow):
 
     def _build_proxy_toolbar(self):
         toolbar = self.addToolBar('proxy')
+
+        toolbar.setObjectName('proxy')
 
         self._gpt_proxy_action = QAction(QIcon(url('chat.svg'))
                                          , 'toggle chatgpt', self)
