@@ -10,6 +10,7 @@ from resourcelistview import ResourceListView
 from utils.resource import url
 from nvim import Nvim
 from proxy import Proxy
+from utils import place_holder
 
 class MainWindow(QMainWindow):
     def __init__(self, book: Book, nvim: Nvim, proxy: Proxy):
@@ -63,7 +64,46 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(url('note_stack.svg')))
 
     def _build_toolbar(self):
-        toolbar = self.addToolBar('')
+        self._build_main_toolbar()
+        self._build_proxy_toolbar()
+
+    def _create_action(self, icon, tips, toolbar, action_group):
+        action = QAction(QIcon(url(icon)), tips, self)
+
+        action.setCheckable(True)
+
+        toolbar.addAction(action)
+        if action_group:
+            action_group.addAction(action)
+
+        return action
+
+    def _build_main_toolbar(self):
+        toolbar = self.addToolBar('main')
+        action_group = QActionGroup(self)
+
+        self._note_action = self._create_action(
+            'note_stack.svg', 'Note', toolbar, action_group)
+
+        self._dictionary_action = self._create_action(
+            'dictionary.svg', 'Dictionary', toolbar, action_group)
+
+        self._photo_action = self._create_action(
+            'photo_library.svg', 'Photo', toolbar, action_group)
+
+        self._movie_action = self._create_action(
+            'movie.svg', 'Movie', toolbar, action_group)
+
+        self._book_action = self._create_action(
+            'book_5.svg', 'Book', toolbar, action_group)
+
+        self._study_action = self._create_action(
+            'school.svg', 'Study', toolbar, action_group)
+
+        self._note_action.setChecked(True)
+
+    def _build_proxy_toolbar(self):
+        toolbar = self.addToolBar('proxy')
 
         self._gpt_proxy_action = QAction(QIcon(url('chat.svg'))
                                          , 'toggle chatgpt', self)
@@ -89,6 +129,7 @@ class MainWindow(QMainWindow):
         self._fast_proxy_action.toggled.connect(self._on_fast_proxy_toggle)
         self._proxy_off_action.toggled.connect(self._on_proxy_off_toggle)
 
+        toolbar.addWidget(place_holder())
         toolbar.addAction(self._gpt_proxy_action)
         toolbar.addAction(self._fast_proxy_action)
         toolbar.addAction(self._proxy_off_action)
@@ -108,12 +149,10 @@ class MainWindow(QMainWindow):
 
     @Slot() #type: ignore
     def _on_gpt_proxy_toggle(self, checked):
-        logger.debug("gpt proxy toggle")
         self._proxy.toggle_usa(checked)
 
     @Slot() #type: ignore
     def _on_fast_proxy_toggle(self, checked):
-        logger.debug("fast proxy toggle")
         self._proxy.toggle_hongkong(checked)
 
     @Slot() #type: ignore
