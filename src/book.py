@@ -7,7 +7,7 @@ from loguru import logger
 import msgpack
 from pathlib import Path
 from uuid import uuid4
-from PySide6.QtCore import QObject, QTimer, Signal, Slot
+from PySide6.QtCore import QObject, QTimer, QUrl, Signal, Slot
 from platformdirs import user_data_path
 
 def get_file_hash(file_path):
@@ -51,9 +51,13 @@ class Note(QObject):
             os.makedirs(self.html_folder)
 
         # create output file
-        self.output.touch(exist_ok=True)
+        self.output_file.touch(exist_ok=True)
 
         self._file_hash = get_file_hash(self.path)
+
+    @property
+    def id(self):
+        return self._id
 
     @property
     def name(self):
@@ -69,9 +73,19 @@ class Note(QObject):
         return self.note_folder / (self._id + '.md')
 
     @property
-    def output(self) -> Path:
+    def output_file(self) -> Path:
         """The output property."""
         return self.html_folder / (self._id + '.html')
+
+    @property
+    def url(self):
+        """The output property."""
+        return QUrl.fromLocalFile(self.output_file.resolve())
+
+    # @property
+    # def url(self) -> str:
+    #     """The output property."""
+    #     return f'http://localhost:8000/{self._id}/{self._id}.html'
 
     def serialize(self):
         return {
@@ -88,22 +102,31 @@ class Note(QObject):
     def check_file_status(self):
         hash = get_file_hash(self.path)
         if hash != self._file_hash:
-            self._file_hash = hash
+            self.build()
 
-            pandoc = Path.cwd() / 'external' / 'pandoc.exe'
-            # markdown to html
-            subprocess.run([pandoc, '-s', str(self.path), '-o', self.output])
+    def build(self):
+        self._file_hash = hash
 
-            self._check_and_copy_resources()
+        pandoc = Path.cwd() / 'external' / 'pandoc.exe'
+        # markdown to html
+        subprocess.run([
+            pandoc, 
+            '-s', 
+            str(self.path), 
+            '-o', 
+            self.output_file, 
+            # '--include-in-header=header.html'
+            # '--template=template.html'
+        ], creationflags=subprocess.CREATE_NO_WINDOW)
 
-            # web view set url with the local html
-            # self.web_view.setUrl(output.as_uri())
-            self.modified.emit(self.output.as_uri())
+        self._check_and_copy_resources()
 
-            name = get_file_title(self.path)
-            if name != self._name:
-                self._name = name
-                self.name_changed.emit(name)
+        self.modified.emit(self.url)
+
+        name = get_file_title(self.path)
+        if name != self._name:
+            self._name = name
+            self.name_changed.emit(name)
 
     def _check_and_copy_resources(self):
         note_resources = [x.name for x in self.note_folder.iterdir()]
@@ -114,15 +137,16 @@ class Note(QObject):
 
     @property
     def html_folder(self):
-        return user_data_path() / 'note' / '.htmls' / self._id
+        return user_data_path() / 'miscellaneous' / '.htmls' / self._id
 
     @property
     def note_folder(self):
-        return user_data_path() / 'note' / '.notes' / self._id
+        return user_data_path() / 'miscellaneous' / '.notes' / self._id
 
     def clear(self):
         shutil.rmtree(self.html_folder)
         shutil.rmtree(self.note_folder)
+
 
 class Book(QObject):
     current_note_modified = Signal(str)
@@ -162,14 +186,16 @@ class Book(QObject):
             self._current_note.check_file_status()
 
     @Slot(str) #type: ignore
-    def _on_note_modify(self, path: str):
-        if self.sender() is self._current_note:
-            self.current_note_modified.emit(path)
+    def _on_note_modify(self, url: str):
+        if self._current_note:
+            if url == self._current_note.url:
+                self.current_note_modified.emit(url)
 
     @Slot() #type: ignore
     def _on_note_name_change(self, name: str) -> None:
-        if self.sender() is self._current_note:
-            self.current_note_name_change.emit(name)
+        if self._current_note:
+            if name == self._current_note.name:
+                self.current_note_name_change.emit(name)
 
     def create_note(self):
         self._add_note(Note())
@@ -197,13 +223,15 @@ class Book(QObject):
 
         self.new_note.emit(note)
 
+        return note
+
     def add_resource(self, file_path: str):
         if self._current_note:
             self._current_note.add_resource(file_path)
 
     @property
     def user_path(self):
-        return user_data_path() / 'note'
+        return user_data_path() / 'miscellaneous'
 
     def save(self):
         file_name = self.user_path / 'book'
@@ -213,13 +241,10 @@ class Book(QObject):
             })) # type: ignore
 
     def load(self):
-        file_name = self.user_path / 'book'
-
-        if file_name.exists():
-            with open(file_name, 'rb') as file:
-                parsed = msgpack.unpackb(file.read())
-                for x in parsed['notes']:
-                    self._add_note(Note(x['name'], x['id']))
+        folder = self.user_path / '.notes'
+        for note_path in folder.iterdir():
+            note = self._add_note(Note(id=note_path.stem))
+            note.build()
 
         if self._notes:
             self._current_note = self._notes[0]

@@ -12,11 +12,12 @@ class Nvim(QObject):
 
         self._valid = True
         try:
-            subprocess.run(['nvim', '--version'], check=True)
+            subprocess.run(['nvim', '--version'], check=True,
+                           creationflags=subprocess.CREATE_NO_WINDOW)
 
             self._client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._process = subprocess.Popen(['nvim-qt', '--', '--cmd', 'let g:switch_enabled=1'])
-            self._client.connect(('127.0.0.1', 36795))
+            self._client.connect(('127.0.0.1', 36796))
 
         except Exception as e:
             logger.warning(f"nvim connected failed: {str(e)}")

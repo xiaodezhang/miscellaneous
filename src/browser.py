@@ -69,6 +69,9 @@ class Browser(QMainWindow):
         # settings.setAttribute(
         #     QWebEngineSettings.WebAttribute.PluginsEnabled, True)
 
+    def reload(self):
+        self._web_engine_view.reload()
+
     @Slot()
     def _on_side_note_trigger(self):
         self.side_note_triggered.emit()

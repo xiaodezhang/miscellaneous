@@ -1,68 +1,50 @@
 from pathlib import Path
-from PySide6.QtCore import QSettings, Slot
+from PySide6.QtCore import QSettings, QTimer, Slot
 from PySide6.QtGui import QAction, QActionGroup, QCloseEvent, QIcon
-from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QSplitter, QWidget
-from loguru import logger
+from PySide6.QtWidgets import QMainWindow, QStackedWidget
 
-from book import Book, Note
-from browser import Browser
-from notelistview import NoteListView
-from resourcelistview import ResourceListView
+from book import Book
+from noteview import NoteView
 from utils.resource import url
 from nvim import Nvim
 from proxy import Proxy
 from utils import place_holder
 
 class MainWindow(QMainWindow):
+    # def __init__(self, book: Book, nvim: Nvim, proxy: Proxy, graph: Graph):
     def __init__(self, book: Book, nvim: Nvim, proxy: Proxy):
         super().__init__()
 
-        self._nvim = nvim
         self._proxy = proxy
+        # self._graph = graph
+        self._book = book
 
-        self._browser = Browser(self, book)
-        self._note_list_view = NoteListView(book)
-        self._resource_list_view = ResourceListView()
+        container = QStackedWidget()
+        self._note_view = NoteView(book, nvim)
 
-        container = QWidget()
-        self._spliter = QSplitter(self)
-        layout = QHBoxLayout(container)
-
-        layout.addWidget(self._spliter)
-
-        self._spliter.addWidget(self._note_list_view)
-        self._spliter.addWidget(self._browser)
-        self._spliter.addWidget(self._resource_list_view)
-
+        container.addWidget(self._note_view)
         self.setCentralWidget(container)
+
         self._build_toolbar()
 
-        book.current_note_modified.connect(self._on_current_note_modify)
-        book.current_note_changed.connect(lambda note: self._switch_note(note))
-        book.new_note.connect(lambda note: self._switch_note(note))
-
-        self._note_list_view.side_bar_triggered.connect(
-            lambda: self._browser.show_side_note_action())
-
-        self._resource_list_view.side_bar_triggered.connect(
-            lambda: self._browser.show_side_resource_action())
-
-        self._browser.side_note_triggered.connect(
-            lambda: self._note_list_view.show()
-        )
-        self._browser.side_resource_triggered.connect(
-            lambda: self._resource_list_view.show())
-
-        if book.current_note:
-            self._switch_note(book.current_note)
-
-        self._spliter.setSizes([330, 1200, 300])
         self.resize(1200, 800)
 
         self._read_settings()
 
+        # graph.modified.connect(self._on_graph_modify)
+
         self.setWindowTitle("Miscellaneous")
-        self.setWindowIcon(QIcon(str(Path.cwd() / 'image' / 'stack.png')))
+        self.setWindowIcon(QIcon(str(Path.cwd() / 'image' / 'stacks.png')))
+
+    # @Slot()
+    # def _on_graph_modify(self):
+    #     note = self._book.current_note
+    #     if note:
+    #         file_name = note.html_folder / 'test.xml'
+    #         with open(file_name, 'w') as file:
+    #             file.write(self._graph.ink)
+    #
+    #         QTimer.singleShot(300, lambda: self._note_view.reload())
 
     def _build_toolbar(self):
         self._build_main_toolbar()
@@ -159,15 +141,6 @@ class MainWindow(QMainWindow):
     @Slot() #type: ignore
     def _on_fast_proxy_toggle(self, checked):
         self._proxy.toggle_hongkong(checked)
-
-    @Slot() #type: ignore
-    def _on_current_note_modify(self, url: str):
-        self._browser.setUrl(url)
-
-    def _switch_note(self, note: Note):
-        self._browser.setUrl(note.output.as_uri())
-        self._resource_list_view.path = note.note_folder
-        self._nvim.switch(note.path)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         settings = QSettings("duduhome", 'note')
