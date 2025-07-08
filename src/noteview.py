@@ -58,5 +58,5 @@ class NoteView(QWidget):
         self._browser.reload()
 
     @Slot() #type: ignore
-    def _on_current_note_modify(self, url: str):
+    def _on_current_note_modify(self, url):
         self._browser.setUrl(url)

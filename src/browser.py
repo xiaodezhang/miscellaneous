@@ -1,5 +1,5 @@
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent, QIcon
+from PySide6.QtGui import QAction, QDesktopServices, QDragEnterEvent, QDropEvent, QIcon
 from PySide6.QtWebEngineCore import QWebEngineSettings
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QMainWindow, QSizePolicy
@@ -47,11 +47,16 @@ class Browser(QMainWindow):
         self._side_resource_action = QAction(QIcon(url("photo_library.svg")),
                                         "view resources side bar", self)
 
+        self._open_in_browser_action = QAction(QIcon(url("browse.svg")),
+                                        "Open in browser", self)
+
+        self._tool_bar.addAction(self._open_in_browser_action)
         self._tool_bar.addAction(self._side_note_action)
         self._tool_bar.addAction(self._side_resource_action)
 
         self._side_note_action.triggered.connect(self._on_side_note_trigger)
         self._side_resource_action.triggered.connect(self._on_side_resource_trigger)
+        self._open_in_browser_action.triggered.connect(self._on_open_in_browser)
 
         self.setCentralWidget(self._web_engine_view)
 
@@ -68,6 +73,12 @@ class Browser(QMainWindow):
         # settings = self.settings()
         # settings.setAttribute(
         #     QWebEngineSettings.WebAttribute.PluginsEnabled, True)
+
+    @Slot()
+    def _on_open_in_browser(self):
+        note = self._book.current_note
+        if note:
+            QDesktopServices.openUrl(note.url)
 
     def reload(self):
         self._web_engine_view.reload()

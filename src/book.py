@@ -31,7 +31,7 @@ def get_file_title(file_path):
     return title
 
 class Note(QObject):
-    modified = Signal(str)
+    modified = Signal(QUrl)
     name_changed = Signal(str)
     def __init__(self, name='Untitled', id=''):
         super().__init__()
@@ -102,10 +102,14 @@ class Note(QObject):
     def check_file_status(self):
         hash = get_file_hash(self.path)
         if hash != self._file_hash:
-            self.build()
+            self.build(hash)
 
-    def build(self):
-        self._file_hash = hash
+    def build(self, hash = None):
+        if hash is not None:
+            self._file_hash = hash
+
+        else:
+            self._file_hash = get_file_hash(self.path)
 
         pandoc = Path.cwd() / 'external' / 'pandoc.exe'
         # markdown to html
@@ -149,7 +153,7 @@ class Note(QObject):
 
 
 class Book(QObject):
-    current_note_modified = Signal(str)
+    current_note_modified = Signal(QUrl)
     current_note_name_change = Signal(str)
 
     new_note = Signal(Note)
@@ -185,7 +189,7 @@ class Book(QObject):
         if self._current_note:
             self._current_note.check_file_status()
 
-    @Slot(str) #type: ignore
+    @Slot()
     def _on_note_modify(self, url: str):
         if self._current_note:
             if url == self._current_note.url:
@@ -242,6 +246,10 @@ class Book(QObject):
 
     def load(self):
         folder = self.user_path / '.notes'
+        if not folder.exists():
+            folder.mkdir()
+            return
+
         for note_path in folder.iterdir():
             note = self._add_note(Note(id=note_path.stem))
             note.build()
