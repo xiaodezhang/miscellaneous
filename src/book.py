@@ -112,6 +112,8 @@ class Note(QObject):
             self._file_hash = get_file_hash(self.path)
 
         pandoc = Path.cwd() / 'external' / 'pandoc.exe'
+        html = Path.cwd() / 'style' / 'github.html'
+
         # markdown to html
         subprocess.run([
             pandoc, 
@@ -119,8 +121,8 @@ class Note(QObject):
             str(self.path), 
             '-o', 
             self.output_file, 
-            # '--include-in-header=header.html'
-            # '--template=template.html'
+            f'--template={html}',
+            '--from=gfm',
         ], creationflags=subprocess.CREATE_NO_WINDOW)
 
         self._check_and_copy_resources()
@@ -131,6 +133,35 @@ class Note(QObject):
         if name != self._name:
             self._name = name
             self.name_changed.emit(name)
+
+    def export_to_html(self, path):
+        pandoc = Path.cwd() / 'external' / 'pandoc.exe'
+        html = Path.cwd() / 'style' / 'github.html'
+        # markdown to html
+        subprocess.run([
+            pandoc, 
+            str(self.path), 
+            '-o', 
+            path,
+            f'--template={html}',
+            '--from=gfm',
+            '--embed-resources',
+            '--standalone', 
+        ], cwd=self.note_folder, creationflags=subprocess.CREATE_NO_WINDOW)
+
+    def export_to_word(self, path):
+        pandoc = Path.cwd() / 'external' / 'pandoc.exe'
+        docx = Path.cwd() / 'style' / 'reference.docx'
+        # markdown to html
+        subprocess.run([
+            pandoc, 
+            str(self.path), 
+            '-o', 
+            path,
+            f'--reference-doc={docx}',
+            '--from=gfm',
+            '--standalone', 
+        ], cwd=self.note_folder, creationflags=subprocess.CREATE_NO_WINDOW)
 
     def _check_and_copy_resources(self):
         note_resources = [x.name for x in self.note_folder.iterdir()]

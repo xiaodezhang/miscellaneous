@@ -6,7 +6,7 @@ import winreg
 
 HONGKONG_IP= '154.197.26.66'
 HONGKONG_LOCAL_PORT = 8219
-USA_IP = '156.247.14.88'
+USA_IP = '217.194.133.234'
 USA_LOCAL_PORT = 8229
 
 def get_proxy_settings():

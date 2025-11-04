@@ -1,6 +1,7 @@
 from PySide6.QtGui import QAction, QContextMenuEvent, QCursor, QIcon, QPixmap
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QMainWindow, 
@@ -8,6 +9,7 @@ from PySide6.QtWidgets import (
     QToolButton,
 )
 from loguru import logger
+from platformdirs import user_desktop_dir, user_desktop_path
 from book import Book, Note
 from utils import append_class, override, place_holder
 from utils.listview import Item, ListView
@@ -119,13 +121,25 @@ class NoteItem(Item):
         name_label = QLabel(note.name)
 
         self._more_menu = QMenu(self)
-        self._remove_action = QAction(QIcon(url('do_not_disturb_on.svg')), 
-                                      'delete the note', self)
+        self._export_to_html_action = QAction(
+            QIcon(url('system_update_alt.svg')), 
+            'export to html', self)
+
+        self._export_to_word_action = QAction(
+            QIcon(url('system_update_alt.svg')), 
+            'export to word', self)
+
+
+        self._remove_action = QAction(
+            QIcon(url('do_not_disturb_on.svg')), 
+            'delete the note', self)
 
         self._more_button = QToolButton()
         self._more_action = QAction(QIcon(url('more_horiz.svg')), '', self)
         icon_label = QLabel()
 
+        self._more_menu.addAction(self._export_to_html_action)
+        self._more_menu.addAction(self._export_to_word_action)
         self._more_menu.addAction(self._remove_action)
 
         icon_label.setPixmap(QPixmap(url('news.svg')))
@@ -143,6 +157,8 @@ class NoteItem(Item):
             lambda: self._more_menu.exec(QCursor.pos()))
 
         self._remove_action.triggered.connect(self._on_remove_trigger)
+        self._export_to_html_action.triggered.connect(self._on_export_to_html_trigger)
+        self._export_to_word_action.triggered.connect(self._on_export_to_word_trigger)
 
         self.active_changed.connect(lambda x: self._more_button.setVisible(x))
 
@@ -162,6 +178,18 @@ class NoteItem(Item):
     @Slot()
     def _on_remove_trigger(self):
         self.removed.emit(self)
+
+    @Slot()
+    def _on_export_to_html_trigger(self):
+        file_name, _ = QFileDialog.getSaveFileName(self, 'export to html', user_desktop_dir(), '*.html')
+        if file_name:
+            self._note.export_to_html(file_name)
+
+    @Slot()
+    def _on_export_to_word_trigger(self):
+        file_name, _ = QFileDialog.getSaveFileName(self, 'export to html', user_desktop_dir(), '*.docx')
+        if file_name:
+            self._note.export_to_word(file_name)
 
     @property
     def note(self):
